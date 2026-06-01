@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from mistralai import Mistral
 from dotenv import load_dotenv
+import asyncio
+import httpx
 import os
 
 load_dotenv()
@@ -83,3 +85,19 @@ async def health():
 @app.get("/")
 def root():
     return {"message": "Portfolio Chatbot API Running"}
+
+
+
+@app.on_event("startup")
+async def keep_alive():
+    async def ping():
+        while True:
+            await asyncio.sleep(14 * 60)
+            try:
+                async with httpx.AsyncClient() as client:
+                    await client.get(
+                        "https://sonu-chatbot-backend.onrender.com/health"
+                    )
+            except:
+                pass
+    asyncio.create_task(ping())
